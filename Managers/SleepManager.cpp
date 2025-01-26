@@ -4,6 +4,6 @@
 
 void SleepManager::sleep_ms(const int ms) {
     if(usleep(ms * 1000) == -1) {
-      logger.perror(Logger::GENERAL, "usleep() failed.");
+//      logger.perror(Logger::GENERAL, "usleep() failed.");
     }
 }

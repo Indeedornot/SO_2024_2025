@@ -50,14 +50,14 @@ void SemaphoreManager::clear_stale_semaphores() {
     for (int i = 0; i <= MAX_PRODUCERS; ++i) {
         std::string sem_name = std::string(SEM_PRODUCER_PREFIX) + std::to_string(i);
         if(sem_unlink(sem_name.c_str()) == -1) {
-            logger.perror(Logger::GENERAL, "Failed to unlink AN OLD semaphore: " + sem_name);
+//            logger.perror(Logger::GENERAL, "Failed to unlink AN OLD semaphore: " + sem_name);
         }
     }
 
     if(sem_unlink(SEM_RECEIVER_MUTEX) == -1) {
-        logger.perror(Logger::GENERAL, "Failed to unlink AN OLD semaphore: " + std::string(SEM_RECEIVER_MUTEX));
+//        logger.perror(Logger::GENERAL, "Failed to unlink AN OLD semaphore: " + std::string(SEM_RECEIVER_MUTEX));
     }
     if(sem_unlink(SEM_GLOBAL_MUTEX) == -1) {
-        logger.perror(Logger::GENERAL, "Failed to unlink AN OLD semaphore: " + std::string(SEM_GLOBAL_MUTEX));
+//        logger.perror(Logger::GENERAL, "Failed to unlink AN OLD semaphore: " + std::string(SEM_GLOBAL_MUTEX));
     }
 }
