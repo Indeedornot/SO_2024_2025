@@ -180,7 +180,7 @@ public:
         shared_data = static_cast<SharedData *>(mmap(nullptr, SHM_SIZE, PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd, 0));
         new(shared_data) SharedData();
         shared_data->global_mutex = SemaphoreManager::create_semaphore(SEM_GLOBAL_MUTEX, 1, "SharedDataManager");
-        std::fill(std::begin(shared_data->producer_values), std::end(shared_data->producer_values), 0);
+        std::ranges::fill(shared_data->producer_values, 0);
         logger.log(Logger::SHARED_MEMORY, "Shared memory initialized.");
     }
 
@@ -221,7 +221,7 @@ public:
         logger.log(Logger::PRODUCER, "Producer " + name + " cleaned up.");
     }
 
-    void run() {
+    void run() const {
         std::random_device rd;
         std::mt19937 gen(rd());
         std::uniform_int_distribution<> time_dist(500, 2000);
@@ -286,7 +286,7 @@ public:
         logger.log(Logger::RECEIVER, "Receiver " + name + " cleaned up.");
     }
 
-    void run() {
+    void run() const {
         while (!shared_data->stop_signal.load()) {
             SemaphoreManager::lock_semaphore(shared_data->global_mutex, SEM_GLOBAL_MUTEX, "Receiver " + name);
 
