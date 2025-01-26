@@ -37,7 +37,7 @@ public:
     Logger() {
         enabled_categories_.insert({PRODUCER, RECEIVER, DIRECTOR, SHARED_MEMORY, GENERAL});
         if (log_mode_ & FILE_LOG) {
-            auto log_path = fs::path("log." + std::to_string(std::chrono::system_clock::to_time_t(std::chrono::system_clock::now())) + ".txt");
+            const auto log_path = fs::path("log." + std::to_string(std::chrono::system_clock::to_time_t(std::chrono::system_clock::now())) + ".txt");
             log_file_.open(log_path);
             if (!log_file_) {
                 std::cerr << "Failed to open log file." << std::endl;
@@ -290,7 +290,7 @@ public:
         while (!shared_data->stop_signal.load()) {
             SemaphoreManager::lock_semaphore(shared_data->global_mutex, SEM_GLOBAL_MUTEX, "Receiver " + name);
 
-            bool enough_values = std::all_of(assigned_producers.begin(), assigned_producers.end(), [this](const auto &pair) {
+            const bool enough_values = std::ranges::all_of(assigned_producers, [this](const auto &pair) {
                 auto [producer_id, consume_amount] = pair;
                 return shared_data->get_producer_value(producer_id) >= consume_amount;
             });
