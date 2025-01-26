@@ -13,6 +13,7 @@ public:
     ~Producer();
 
     void run() const;
+    void stop(int signal);
 
 private:
     int id;
@@ -22,6 +23,8 @@ private:
     SharedData *shared_data;
     std::string sem_name;
     sem_t *sem;
+    bool running = true;
+    bool save_state = false;
 };
 
 #endif // PRODUCER_H

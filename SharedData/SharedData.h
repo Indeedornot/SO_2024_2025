@@ -7,8 +7,6 @@
 
 struct SharedData {
     int producer_values[MAX_PRODUCERS]{};
-    std::atomic<bool> stop_signal{false};
-    std::atomic<bool> save_state{false};
     sem_t *global_mutex{};
 
     [[nodiscard]] int get_producer_value(int producer_id) const;

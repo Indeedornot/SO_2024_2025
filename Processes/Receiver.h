@@ -12,6 +12,7 @@ public:
     ~Receiver();
 
     void run() const;
+    void stop(int signal);
 
 private:
     int id;
@@ -19,6 +20,7 @@ private:
     std::map<int, int> assigned_producers;
     SharedData *shared_data;
     sem_t *receiver_mutex;
+    bool running = true;
 };
 
 #endif // RECEIVER_H

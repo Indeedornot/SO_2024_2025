@@ -5,7 +5,11 @@
 #include <atomic>
 #include <iostream>
 
-Director::Director(SharedData *shared_data) : shared_data(shared_data) {
+Director::Director(SharedData *shared_data, std::vector<int> producer_pids, std::vector<int> receiver_pids) :
+   shared_data(shared_data) ,
+   producer_pids(producer_pids),
+   receiver_pids(receiver_pids)
+{
     receiver_mutex = SemaphoreManager::create_semaphore(SEM_RECEIVER_MUTEX, 1, "Director");
     logger.log(Logger::DIRECTOR, "Director started.");
 }
@@ -17,16 +21,22 @@ Director::~Director() {
 
 void Director::run() const {
     std::string command;
-    while (!shared_data->stop_signal.load()) {
-        std::cout << "Enter command (save, quit, status): ";
+    while (true) {
+        std::cout << "Enter command (stop_producers, stop_receivers, save, quit, status): ";
         std::cin >> command;
 
         if (command == "save") {
             stop_processes(true);
+            break;
         } else if (command == "quit") {
             stop_processes(false);
+            break;
         } else if (command == "status") {
             print_status();
+        } else if (command == "stop_producers") {
+            stop_producers();
+        } else if (command == "stop_receivers") {
+            stop_receivers();
         } else {
             std::cout << "Invalid command. Try again." << std::endl;
         }
@@ -34,9 +44,35 @@ void Director::run() const {
 }
 
 void Director::stop_processes(const bool save) const {
-    shared_data->stop_signal.store(true);
-    shared_data->save_state.store(save);
+    int signal = save ? STOP_ALL_WITH_SAVE_SIGNAL : STOP_ALL_SIGNAL;
+    for (const auto pid: producer_pids) {
+        kill(pid, signal);
+        logger.log(Logger::DIRECTOR, "Sent signal " + std::to_string(signal) + " to Producer " + std::to_string(pid));
+    }
+
+    for (const auto pid: receiver_pids) {
+        kill(pid, signal);
+        logger.log(Logger::DIRECTOR, "Sent signal " + std::to_string(signal) + " to Receiver " + std::to_string(pid));
+    }
     std::cout << "Stopping all processes " << (save ? "with" : "without") << " saving." << std::endl;
+}
+
+void Director::stop_producers() const {
+    for (const auto pid: producer_pids) {
+        kill(pid, STOP_PRODUCER_SIGNAL);
+        logger.log(Logger::DIRECTOR, "Sent signal " + std::to_string(STOP_PRODUCER_SIGNAL) + " to Producer " + std::to_string(pid));
+    }
+
+    std::cout << "Stopping all producers." << std::endl;
+}
+
+void Director::stop_receivers() const {
+    for (const auto pid: receiver_pids) {
+        kill(pid, STOP_RECEIVER_SIGNAL);
+        logger.log(Logger::DIRECTOR, "Sent signal " + std::to_string(STOP_RECEIVER_SIGNAL) + " to Receiver " + std::to_string(pid));
+    }
+
+    std::cout << "Stopping all receivers." << std::endl;
 }
 
 void Director::print_status() const {

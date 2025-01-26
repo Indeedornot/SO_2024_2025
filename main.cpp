@@ -18,26 +18,66 @@
 #include "./Processes/Producer.h"
 #include "./Processes/Receiver.h"
 
-void create_producers(const std::map<int, std::tuple<std::string, int, int>> &producers, SharedData *shared_data) {
+static Producer *g_producer;
+std::vector<int> create_producers(const std::map<int, std::tuple<std::string, int, int>> &producers, SharedData *shared_data) {
+    std::vector<int> producer_pids;
     for (const auto &[producer_id, params]: producers) {
         auto [name, value_per_cycle, limit] = params;
-        if (fork() == 0) {
-            const Producer producer(producer_id, name, value_per_cycle, limit, shared_data);
+        const int pid = fork();
+        if (pid == 0) {
+            Producer producer(producer_id, name, value_per_cycle, limit, shared_data);
+            g_producer = &producer;
+            signal(STOP_PRODUCER_SIGNAL, [](int sig) {
+                g_producer->stop(sig);
+            });
+
+            signal(STOP_ALL_SIGNAL, [](int sig) {
+                g_producer->stop(sig);
+            });
+
+            signal(STOP_ALL_WITH_SAVE_SIGNAL, [](int sig) {
+                g_producer->stop(sig);
+            });
+
             producer.run();
             exit(0);
         }
+
+        producer_pids.push_back(pid);
     }
+
+    return producer_pids;
 }
 
-void create_receivers(const std::map<int, std::tuple<std::string, std::map<int, int>>> &receiver_configs, SharedData *shared_data) {
+static Receiver *g_receiver;
+std::vector<int> create_receivers(const std::map<int, std::tuple<std::string, std::map<int, int>>> &receiver_configs, SharedData *shared_data) {
+    std::vector<int> receiver_pids;
     for (const auto &[receiver_id, params]: receiver_configs) {
         auto [name, assigned_producers] = params;
-        if (fork() == 0) {
-            const Receiver receiver(receiver_id, name, assigned_producers, shared_data);
+        const int pid = fork();
+        if (pid == 0) {
+            Receiver receiver(receiver_id, name, assigned_producers, shared_data);
+            g_receiver = &receiver;
+            signal(STOP_RECEIVER_SIGNAL, [](int sig) {
+                    g_receiver->stop(sig);
+                });
+
+            signal(STOP_ALL_SIGNAL, [](int sig) {
+                    g_receiver->stop(sig);
+                });
+
+            signal(STOP_ALL_WITH_SAVE_SIGNAL, [](int sig) {
+                    g_receiver->stop(sig);
+                });
+
             receiver.run();
             exit(0);
         }
+
+        receiver_pids.push_back(pid);
     }
+
+    return receiver_pids;
 }
 
 int main() {
@@ -56,10 +96,10 @@ int main() {
         {2, {"ReceiverY", {{2, 3}, {3, 1}}}}
     };
 
-    create_producers(producers, shared_data);
-    create_receivers(receiver_configs, shared_data);
+    std::vector<int> producer_pids = create_producers(producers, shared_data);
+    std::vector<int> receiver_pids = create_receivers(receiver_configs, shared_data);
 
-    Director director(shared_data);
+    Director director(shared_data, producer_pids, receiver_pids);
     std::thread director_thread(&Director::run, &director);
 
     while (true) {

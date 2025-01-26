@@ -14,4 +14,5 @@ add_executable(factory_v3
         SharedData/SharedData.cpp
         SharedData/SharedDataManager.cpp
         SharedData/Globals.cpp
+        Managers/RandomManager.cpp
 )

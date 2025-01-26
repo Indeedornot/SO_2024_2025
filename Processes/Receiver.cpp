@@ -3,6 +3,7 @@
 #include "../Managers/SemaphoreManager.h"
 #include "../Logger/Logger.h"
 #include "../Managers/SleepManager.h"
+#include "../Managers/RandomManager.h"
 #include <algorithm>
 
 Receiver::Receiver(const int id, const std::string& name, std::map<int, int> assigned_producers, SharedData *shared_data)
@@ -17,7 +18,8 @@ Receiver::~Receiver() {
 }
 
 void Receiver::run() const {
-    while (!shared_data->stop_signal.load()) {
+    RandomManager randomManager;
+    while (running) {
         SemaphoreManager::lock_semaphore(shared_data->global_mutex, SEM_GLOBAL_MUTEX, "Receiver " + name);
 
         const bool enough_values = std::ranges::all_of(assigned_producers, [this](const auto &pair) {
@@ -27,7 +29,7 @@ void Receiver::run() const {
 
         if (!enough_values) {
             SemaphoreManager::unlock_semaphore(shared_data->global_mutex, SEM_GLOBAL_MUTEX, "Receiver " + name);
-            SleepManager::sleep_ms(100);
+            SleepManager::sleep_ms(randomManager.get_random_int(500, 2000));
             continue;
         }
 
@@ -37,6 +39,11 @@ void Receiver::run() const {
         }
 
         SemaphoreManager::unlock_semaphore(shared_data->global_mutex, SEM_GLOBAL_MUTEX, "Receiver " + name);
-        SleepManager::sleep_ms(500);
+        SleepManager::sleep_ms(randomManager.get_random_int(500, 2000));
     }
+}
+
+void Receiver::stop(int signal) {
+    logger.log(Logger::RECEIVER, "Receiver " + name + " received " + std::to_string(signal) + " stop signal.");
+    running = false;
 }
