@@ -60,9 +60,14 @@ void Producer::run() const {
         SemaphoreManager::unlock_semaphore(shared_data->global_mutex, SEM_GLOBAL_MUTEX, "Producer " + name);
     }
 
+    logger.log(Logger::PRODUCER, "Producer " + name + " stopped.");
+
     if (save_state) {
         std::ofstream file(file_path);
         file << shared_data->get_producer_value(id) << std::endl;
+        logger.log(Logger::PRODUCER, "Producer " + name + " saved value: " + std::to_string(shared_data->get_producer_value(id)));
+    } else {
+        logger.log(Logger::PRODUCER, "Producer " + name + " did not save value.");
     }
 }
 

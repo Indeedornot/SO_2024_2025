@@ -29,6 +29,7 @@ void Receiver::run() const {
 
         if (!enough_values) {
             SemaphoreManager::unlock_semaphore(shared_data->global_mutex, SEM_GLOBAL_MUTEX, "Receiver " + name);
+            logger.log(Logger::RECEIVER, "Receiver " + name + " did not find enough values to consume. Waiting.");
             SleepManager::sleep_ms(randomManager.get_random_int(500, 2000));
             continue;
         }
