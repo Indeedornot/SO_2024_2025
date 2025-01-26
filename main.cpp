@@ -202,16 +202,16 @@ private:
 
 class Producer {
 public:
-    Producer(const int id, const int value_per_cycle, const int limit, SharedData *shared_data)
-        : id(id), value_per_cycle(value_per_cycle), limit(limit), shared_data(shared_data) {
+    Producer(const int id, const std::string& name, const int value_per_cycle, const int limit, SharedData *shared_data)
+        : id(id), name(name), value_per_cycle(value_per_cycle), limit(limit), shared_data(shared_data) {
         sem_name = std::string(SEM_PRODUCER_PREFIX) + std::to_string(id);
-        sem = SemaphoreManager::create_semaphore(sem_name, 1, "Producer " + std::to_string(id));
-        logger.log(Logger::PRODUCER, "Producer " + std::to_string(id) + " started with limit " + std::to_string(limit));
+        sem = SemaphoreManager::create_semaphore(sem_name, 1, "Producer " + name);
+        logger.log(Logger::PRODUCER, "Producer " + name + " started with limit " + std::to_string(limit));
     }
 
     ~Producer() {
-        SemaphoreManager::close_semaphore(sem, sem_name, "Producer " + std::to_string(id));
-        logger.log(Logger::PRODUCER, "Producer " + std::to_string(id) + " cleaned up.");
+        SemaphoreManager::close_semaphore(sem, sem_name, "Producer " + name);
+        logger.log(Logger::PRODUCER, "Producer " + name + " cleaned up.");
     }
 
     void run() {
@@ -219,7 +219,7 @@ public:
         std::mt19937 gen(rd());
         std::uniform_int_distribution<> time_dist(500, 2000);
 
-        auto file_path = fs::path("producer_" + std::to_string(id) + ".txt");
+        auto file_path = fs::path("producer_" + name + ".txt");
         if (!fs::exists(file_path)) {
             std::ofstream file(file_path);
             file << 0 << std::endl;
@@ -228,26 +228,26 @@ public:
             int value;
             file >> value;
 
-            SemaphoreManager::lock_semaphore(shared_data->global_mutex, SEM_GLOBAL_MUTEX, "Producer " + std::to_string(id));
+            SemaphoreManager::lock_semaphore(shared_data->global_mutex, SEM_GLOBAL_MUTEX, "Producer " + name);
             shared_data->set_producer_value(id, value);
-            SemaphoreManager::unlock_semaphore(shared_data->global_mutex, SEM_GLOBAL_MUTEX, "Producer " + std::to_string(id));
+            SemaphoreManager::unlock_semaphore(shared_data->global_mutex, SEM_GLOBAL_MUTEX, "Producer " + name);
 
-            logger.log(Logger::PRODUCER, "Producer " + std::to_string(id) + " loaded previous value: " + std::to_string(value));
+            logger.log(Logger::PRODUCER, "Producer " + name + " loaded previous value: " + std::to_string(value));
         }
 
         while (!shared_data->stop_signal.load()) {
             usleep(time_dist(gen) * 1000);
 
-            SemaphoreManager::lock_semaphore(shared_data->global_mutex, SEM_GLOBAL_MUTEX, "Producer " + std::to_string(id));
+            SemaphoreManager::lock_semaphore(shared_data->global_mutex, SEM_GLOBAL_MUTEX, "Producer " + name);
 
             if (shared_data->get_producer_value(id) + value_per_cycle <= limit) {
                 shared_data->increment_producer_value(id, value_per_cycle);
-                logger.log(Logger::PRODUCER, "Producer " + std::to_string(id) + " produced " + std::to_string(value_per_cycle) + ". Total: " + std::to_string(shared_data->get_producer_value(id)));
+                logger.log(Logger::PRODUCER, "Producer " + name + " produced " + std::to_string(value_per_cycle) + ". Total: " + std::to_string(shared_data->get_producer_value(id)));
             } else {
-                logger.log(Logger::PRODUCER, "Producer " + std::to_string(id) + " reached its limit. Skipping production.");
+                logger.log(Logger::PRODUCER, "Producer " + name + " reached its limit. Skipping production.");
             }
 
-            SemaphoreManager::unlock_semaphore(shared_data->global_mutex, SEM_GLOBAL_MUTEX, "Producer " + std::to_string(id));
+            SemaphoreManager::unlock_semaphore(shared_data->global_mutex, SEM_GLOBAL_MUTEX, "Producer " + name);
         }
 
         if (shared_data->save_state.load()) {
@@ -258,6 +258,7 @@ public:
 
 private:
     int id;
+    std::string name;
     int value_per_cycle;
     int limit;
     SharedData *shared_data;
@@ -267,47 +268,48 @@ private:
 
 class Receiver {
 public:
-    Receiver(const int id, std::map<int, int> assigned_producers, SharedData *shared_data)
-        : assigned_producers(std::move(assigned_producers)), shared_data(shared_data), id(id) {
-        receiver_mutex = SemaphoreManager::create_semaphore(SEM_RECEIVER_MUTEX, 1, "Receiver");
-        logger.log(Logger::RECEIVER, "Receiver started.");
+    Receiver(const int id, const std::string& name, std::map<int, int> assigned_producers, SharedData *shared_data)
+        : id(id), name(name), assigned_producers(std::move(assigned_producers)), shared_data(shared_data) {
+        receiver_mutex = SemaphoreManager::create_semaphore(SEM_RECEIVER_MUTEX, 1, "Receiver " + name);
+        logger.log(Logger::RECEIVER, "Receiver " + name + " started.");
     }
 
     ~Receiver() {
-        SemaphoreManager::close_semaphore(receiver_mutex, SEM_RECEIVER_MUTEX, "Receiver");
-        logger.log(Logger::RECEIVER, "Receiver cleaned up.");
+        SemaphoreManager::close_semaphore(receiver_mutex, SEM_RECEIVER_MUTEX, "Receiver " + name);
+        logger.log(Logger::RECEIVER, "Receiver " + name + " cleaned up.");
     }
 
     void run() {
         while (!shared_data->stop_signal.load()) {
-            SemaphoreManager::lock_semaphore(shared_data->global_mutex, SEM_GLOBAL_MUTEX, "Receiver");
+            SemaphoreManager::lock_semaphore(shared_data->global_mutex, SEM_GLOBAL_MUTEX, "Receiver " + name);
 
-            const bool enough_values = std::ranges::all_of(assigned_producers, [this](const auto &pair) {
+            bool enough_values = std::all_of(assigned_producers.begin(), assigned_producers.end(), [this](const auto &pair) {
                 auto [producer_id, consume_amount] = pair;
                 return shared_data->get_producer_value(producer_id) >= consume_amount;
             });
 
             if (!enough_values) {
-                SemaphoreManager::unlock_semaphore(shared_data->global_mutex, SEM_GLOBAL_MUTEX, "Receiver");
+                SemaphoreManager::unlock_semaphore(shared_data->global_mutex, SEM_GLOBAL_MUTEX, "Receiver " + name);
                 usleep(100000);
                 continue;
             }
 
             for (const auto &[producer_id, consume_amount]: assigned_producers) {
                 shared_data->decrement_producer_value(producer_id, consume_amount);
-                logger.log(Logger::RECEIVER, "Receiver consumed " + std::to_string(consume_amount) + " from Producer " + std::to_string(producer_id) + ". Remaining: " + std::to_string(shared_data->get_producer_value(producer_id)));
+                logger.log(Logger::RECEIVER, "Receiver " + name + " consumed " + std::to_string(consume_amount) + " from Producer " + std::to_string(producer_id) + ". Remaining: " + std::to_string(shared_data->get_producer_value(producer_id)));
             }
 
-            SemaphoreManager::unlock_semaphore(shared_data->global_mutex, SEM_GLOBAL_MUTEX, "Receiver");
+            SemaphoreManager::unlock_semaphore(shared_data->global_mutex, SEM_GLOBAL_MUTEX, "Receiver " + name);
             usleep(500000);
         }
     }
 
 private:
+    int id;
+    std::string name;
     std::map<int, int> assigned_producers;
     SharedData *shared_data;
     sem_t *receiver_mutex;
-    int id;
 };
 
 class Director {
@@ -359,20 +361,22 @@ private:
     }
 };
 
-void create_producers(const std::map<int, std::pair<int, int>> &producers, SharedData *shared_data) {
+void create_producers(const std::map<int, std::tuple<std::string, int, int>> &producers, SharedData *shared_data) {
     for (const auto &[producer_id, params]: producers) {
+        auto [name, value_per_cycle, limit] = params;
         if (fork() == 0) {
-            Producer producer(producer_id, params.first, params.second, shared_data);
+            Producer producer(producer_id, name, value_per_cycle, limit, shared_data);
             producer.run();
             exit(0);
         }
     }
 }
 
-void create_receivers(const std::map<int, std::map<int, int>> &receiver_configs, SharedData *shared_data) {
-    for (const auto &[receiver_id, assigned_producers]: receiver_configs) {
+void create_receivers(const std::map<int, std::tuple<std::string, std::map<int, int>>> &receiver_configs, SharedData *shared_data) {
+    for (const auto &[receiver_id, params]: receiver_configs) {
+        auto [name, assigned_producers] = params;
         if (fork() == 0) {
-            Receiver receiver(receiver_id, assigned_producers, shared_data);
+            Receiver receiver(receiver_id, name, assigned_producers, shared_data);
             receiver.run();
             exit(0);
         }
@@ -384,15 +388,15 @@ int main() {
     const SharedDataManager shared_data_manager;
     SharedData *shared_data = shared_data_manager.get_shared_data();
 
-    // Producer ID -> {Value per cycle, Limit}
-    const std::map<int, std::pair<int, int>> producers = {
-        {1, {5, 20}}, {2, {10, 30}}, {3, {3, 10}}
+    // Producer ID -> {Name, Value per cycle, Limit}
+    const std::map<int, std::tuple<std::string, int, int>> producers = {
+        {1, {"ProducerA", 5, 20}}, {2, {"ProducerB", 10, 30}}, {3, {"ProducerC", 3, 10}}
     };
 
-    // Receiver ID -> {Producer ID -> Consume amount}
-    const std::map<int, std::map<int, int>> receiver_configs = {
-        {1, {{1, 2}, {2, 5}}},
-        {2, {{2, 3}, {3, 1}}}
+    // Receiver ID -> {Name, {Producer ID -> Consume amount}}
+    const std::map<int, std::tuple<std::string, std::map<int, int>>> receiver_configs = {
+        {1, {"ReceiverX", {{1, 2}, {2, 5}}}},
+        {2, {"ReceiverY", {{2, 3}, {3, 1}}}}
     };
 
     create_producers(producers, shared_data);
