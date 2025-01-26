@@ -3,7 +3,7 @@
 #include <fcntl.h>
 #include <string.h>
 #include <sys/mman.h>
-#include <semaphore>
+#include <semaphore.h>
 
 sem_t *SemaphoreManager::create_semaphore(const std::string &name, const int value, const std::string &owner) {
     sem_t *sem = sem_open(name.c_str(), O_CREAT, 0600, value);
