@@ -4,7 +4,6 @@
 #include <unistd.h>
 #include <semaphore.h>
 #include <map>
-#include <vector>
 #include <random>
 #include <memory>
 #include <thread>
@@ -224,7 +223,7 @@ public:
     void run() const {
         std::random_device rd;
         std::mt19937 gen(rd());
-        std::uniform_int_distribution<> time_dist(500, 2000);
+        std::uniform_int_distribution time_dist(500, 2000);
 
         auto file_path = fs::path("producer_" + name + ".txt");
         if (!fs::exists(file_path)) {
@@ -372,7 +371,7 @@ void create_producers(const std::map<int, std::tuple<std::string, int, int>> &pr
     for (const auto &[producer_id, params]: producers) {
         auto [name, value_per_cycle, limit] = params;
         if (fork() == 0) {
-            Producer producer(producer_id, name, value_per_cycle, limit, shared_data);
+            const Producer producer(producer_id, name, value_per_cycle, limit, shared_data);
             producer.run();
             exit(0);
         }
@@ -383,7 +382,7 @@ void create_receivers(const std::map<int, std::tuple<std::string, std::map<int, 
     for (const auto &[receiver_id, params]: receiver_configs) {
         auto [name, assigned_producers] = params;
         if (fork() == 0) {
-            Receiver receiver(receiver_id, name, assigned_producers, shared_data);
+            const Receiver receiver(receiver_id, name, assigned_producers, shared_data);
             receiver.run();
             exit(0);
         }
