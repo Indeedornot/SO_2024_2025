@@ -307,7 +307,7 @@ public:
             }
 
             SemaphoreManager::unlock_semaphore(shared_data->global_mutex, SEM_GLOBAL_MUTEX, "Receiver " + name);
-            SleepManager::sleep_ms(500000);
+            SleepManager::sleep_ms(500);
         }
     }
 
