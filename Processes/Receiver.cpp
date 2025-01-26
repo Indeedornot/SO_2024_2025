@@ -17,7 +17,7 @@ Receiver::~Receiver() {
     logger.log(Logger::RECEIVER, "Receiver " + name + " cleaned up.");
 }
 
-void Receiver::run() const {
+void Receiver::run() {
     RandomManager randomManager;
     while (running) {
         SemaphoreManager::lock_semaphore(shared_data->global_mutex, SEM_GLOBAL_MUTEX, "Receiver " + name);

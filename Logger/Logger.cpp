@@ -34,6 +34,13 @@ void Logger::log(const Category category, const std::string &message) {
     }
 }
 
+void Logger::perror(const Category category, const std::string &message) {
+    ::perror(message.c_str());
+    if (log_mode_ & FILE_LOG) {
+        log_file_ << "[" << get_category_name(category) << "] " << message << std::endl;
+    }
+}
+
 std::string Logger::get_category_name(const Category category) {
     switch (category) {
         case LOCK_SEMAPHORE: return "LOCK_SEMAPHORE";

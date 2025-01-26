@@ -12,7 +12,7 @@ public:
     Producer(int id, const std::string& name, int value_per_cycle, int limit, SharedData *shared_data);
     ~Producer();
 
-    void run() const;
+    void run();
     void stop(int signal);
 
 private:
@@ -25,6 +25,8 @@ private:
     sem_t *sem;
     bool running = true;
     bool save_state = false;
+    void load_previous_value();
+    void save_value();
 };
 
 #endif // PRODUCER_H

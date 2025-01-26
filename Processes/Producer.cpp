@@ -9,6 +9,7 @@
 #include <filesystem>
 #include <fstream>
 #include <signal.h>
+#include <fcntl.h>
 
 Producer::Producer(const int id, const std::string& name, const int value_per_cycle, const int limit, SharedData *shared_data)
     : id(id), name(name), value_per_cycle(value_per_cycle), limit(limit), shared_data(shared_data) {
@@ -23,27 +24,39 @@ Producer::~Producer() {
     logger.log(Logger::PRODUCER, "Producer " + name + " cleaned up.");
 }
 
-void Producer::run() const {
-    RandomManager randomManager;
-
+void Producer::load_previous_value() {
     auto file_path = fs::path("producer_" + name + ".txt");
-    if (!fs::exists(file_path)) {
-        std::ofstream file(file_path);
-        file << 0 << std::endl;
-    } else {
+    if (fs::exists(file_path)) {
         logger.log(Logger::PRODUCER, "Producer " + name + " found previous value file.");
         std::ifstream file(file_path);
+        if (!file.is_open()) {
+            logger.perror(Logger::PRODUCER, "Producer " + name + " failed to load previous value.");
+            return;
+        }
         int value;
-        file >> value;
+        if(!(file >> value)) {
+            logger.perror(Logger::PRODUCER, "Producer " + name + " failed to load previous value.");
+            return;
+        }
 
         SemaphoreManager::lock_semaphore(shared_data->global_mutex, SEM_GLOBAL_MUTEX, "Producer " + name);
         shared_data->set_producer_value(id, value);
         SemaphoreManager::unlock_semaphore(shared_data->global_mutex, SEM_GLOBAL_MUTEX, "Producer " + name);
 
         logger.log(Logger::PRODUCER, "Producer " + name + " loaded previous value: " + std::to_string(value));
-        fs::remove(file_path);
+        if(!fs::remove(file_path)) {
+            logger.perror(Logger::PRODUCER, "Producer " + name + " failed to remove previous value file.");
+            return;
+        }
         logger.log(Logger::PRODUCER, "Producer " + name + " removed previous value file.");
+    } else {
+        logger.log(Logger::PRODUCER, "Producer " + name + " did not find previous value file.");
     }
+}
+
+void Producer::run() {
+    RandomManager randomManager;
+    load_previous_value();
 
     while (running) {
         SleepManager::sleep_ms(randomManager.get_random_int(500, 2000));
@@ -63,11 +76,30 @@ void Producer::run() const {
     logger.log(Logger::PRODUCER, "Producer " + name + " stopped.");
 
     if (save_state) {
-        std::ofstream file(file_path);
+        save_value();
+    } else {
+        logger.log(Logger::PRODUCER, "Producer " + name + " did not save value.");
+    }
+}
+
+void Producer::save_value() {
+    auto file_path = fs::path("producer_" + name + ".txt");
+
+    int fd = open(file_path.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0600);
+    if (fd == -1) {
+        logger.perror(Logger::PRODUCER, "Producer " + name + " failed to save value.");
+        return;
+    }
+    if(close(fd) == -1) {
+        logger.perror(Logger::PRODUCER, "Producer " + name + " failed to save value.");
+        return;
+    }
+    std::ofstream file(file_path);
+    if (file.is_open()) {
         file << shared_data->get_producer_value(id) << std::endl;
         logger.log(Logger::PRODUCER, "Producer " + name + " saved value: " + std::to_string(shared_data->get_producer_value(id)));
     } else {
-        logger.log(Logger::PRODUCER, "Producer " + name + " did not save value.");
+        logger.perror(Logger::PRODUCER, "Producer " + name + " failed to save value.");
     }
 }
 

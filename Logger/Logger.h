@@ -28,6 +28,7 @@ public:
     ~Logger();
 
     void log(Category category, const std::string &message);
+    void perror(Category category, const std::string &message);
 
 private:
     static std::string get_category_name(Category category);

@@ -46,21 +46,30 @@ void Director::run() const {
 void Director::stop_processes(const bool save) const {
     int signal = save ? STOP_ALL_WITH_SAVE_SIGNAL : STOP_ALL_SIGNAL;
     for (const auto pid: producer_pids) {
-        kill(pid, signal);
-        logger.log(Logger::DIRECTOR, "Sent signal " + std::to_string(signal) + " to Producer " + std::to_string(pid));
+        if(kill(pid, signal) == -1) {
+            logger.perror(Logger::DIRECTOR, "Failed to send signal " + std::to_string(signal) + " to Producer " + std::to_string(pid));
+        } else {
+            logger.log(Logger::DIRECTOR, "Sent signal " + std::to_string(signal) + " to Producer " + std::to_string(pid));
+        }
     }
 
     for (const auto pid: receiver_pids) {
-        kill(pid, signal);
-        logger.log(Logger::DIRECTOR, "Sent signal " + std::to_string(signal) + " to Receiver " + std::to_string(pid));
+        if(kill(pid, signal) == -1) {
+            logger.perror(Logger::DIRECTOR, "Failed to send signal " + std::to_string(signal) + " to Receiver " + std::to_string(pid));
+        } else {
+            logger.log(Logger::DIRECTOR, "Sent signal " + std::to_string(signal) + " to Receiver " + std::to_string(pid));
+        }
     }
     std::cout << "Stopping all processes " << (save ? "with" : "without") << " saving." << std::endl;
 }
 
 void Director::stop_producers() const {
     for (const auto pid: producer_pids) {
-        kill(pid, STOP_PRODUCER_SIGNAL);
-        logger.log(Logger::DIRECTOR, "Sent signal " + std::to_string(STOP_PRODUCER_SIGNAL) + " to Producer " + std::to_string(pid));
+        if(kill(pid, STOP_PRODUCER_SIGNAL) == -1) {
+            logger.perror(Logger::DIRECTOR, "Failed to send signal " + std::to_string(STOP_PRODUCER_SIGNAL) + " to Producer " + std::to_string(pid));
+        } else {
+            logger.log(Logger::DIRECTOR, "Sent signal " + std::to_string(STOP_PRODUCER_SIGNAL) + " to Producer " + std::to_string(pid));
+        }
     }
 
     std::cout << "Stopping all producers." << std::endl;
@@ -68,8 +77,11 @@ void Director::stop_producers() const {
 
 void Director::stop_receivers() const {
     for (const auto pid: receiver_pids) {
-        kill(pid, STOP_RECEIVER_SIGNAL);
-        logger.log(Logger::DIRECTOR, "Sent signal " + std::to_string(STOP_RECEIVER_SIGNAL) + " to Receiver " + std::to_string(pid));
+        if(kill(pid, STOP_RECEIVER_SIGNAL) == -1) {
+          logger.perror(Logger::DIRECTOR, "Failed to send signal " + std::to_string(STOP_RECEIVER_SIGNAL) + " to Receiver " + std::to_string(pid));
+        } else {
+            logger.log(Logger::DIRECTOR, "Sent signal " + std::to_string(STOP_RECEIVER_SIGNAL) + " to Receiver " + std::to_string(pid));
+        }
     }
 
     std::cout << "Stopping all receivers." << std::endl;

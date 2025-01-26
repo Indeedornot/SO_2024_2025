@@ -42,7 +42,10 @@ std::vector<int> create_producers(const std::map<int, std::tuple<std::string, in
             producer.run();
             exit(0);
         }
-
+        if (pid == -1) {
+            logger.perror(Logger::PRODUCER, "fork() failed for producer " + name);
+            exit(EXIT_FAILURE);
+        }
         producer_pids.push_back(pid);
     }
 
@@ -73,7 +76,10 @@ std::vector<int> create_receivers(const std::map<int, std::tuple<std::string, st
             receiver.run();
             exit(0);
         }
-
+        if (pid == -1) {
+            logger.perror(Logger::RECEIVER, "fork() failed for receiver " + name);
+            exit(EXIT_FAILURE);
+        }
         receiver_pids.push_back(pid);
     }
 
@@ -109,7 +115,7 @@ int main() {
                 std::cout << "All child processes finished." << std::endl;
                 break;
             }
-            perror("wait");
+            logger.perror(Logger::GENERAL, "wait() failed.");
             exit(EXIT_FAILURE);
         }
     }

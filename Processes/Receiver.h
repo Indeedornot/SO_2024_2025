@@ -11,7 +11,7 @@ public:
     Receiver(int id, const std::string& name, std::map<int, int> assigned_producers, SharedData *shared_data);
     ~Receiver();
 
-    void run() const;
+    void run();
     void stop(int signal);
 
 private:
