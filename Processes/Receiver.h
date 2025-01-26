@@ -19,7 +19,6 @@ private:
     std::string name;
     std::map<int, int> assigned_producers;
     SharedData *shared_data;
-    sem_t *receiver_mutex;
     bool running = true;
 };
 

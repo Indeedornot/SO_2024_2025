@@ -47,13 +47,6 @@ void SemaphoreManager::close_semaphore(sem_t *sem, const std::string &name, cons
 // Clear stale semaphores - e.g. if there was a forced stop
 // This is only a precaution and should not be necessary
 void SemaphoreManager::clear_stale_semaphores() {
-    for (int i = 0; i <= MAX_PRODUCERS; ++i) {
-        std::string sem_name = std::string(SEM_PRODUCER_PREFIX) + std::to_string(i);
-        if(sem_unlink(sem_name.c_str()) == -1) {
-//            logger.perror(Logger::GENERAL, "Failed to unlink AN OLD semaphore: " + sem_name);
-        }
-    }
-
     if(sem_unlink(SEM_RECEIVER_MUTEX) == -1) {
 //        logger.perror(Logger::GENERAL, "Failed to unlink AN OLD semaphore: " + std::string(SEM_RECEIVER_MUTEX));
     }

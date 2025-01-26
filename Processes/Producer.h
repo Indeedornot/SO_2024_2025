@@ -22,7 +22,6 @@ private:
     int limit;
     SharedData *shared_data;
     std::string sem_name;
-    sem_t *sem;
     bool running = true;
     bool save_state = false;
     void load_previous_value();

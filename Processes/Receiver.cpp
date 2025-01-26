@@ -8,12 +8,10 @@
 
 Receiver::Receiver(const int id, const std::string& name, std::map<int, int> assigned_producers, SharedData *shared_data)
     : id(id), name(name), assigned_producers(std::move(assigned_producers)), shared_data(shared_data) {
-    receiver_mutex = SemaphoreManager::create_semaphore(SEM_RECEIVER_MUTEX, 1, "Receiver " + name);
     logger.log(Logger::RECEIVER, "Receiver " + name + " started.");
 }
 
 Receiver::~Receiver() {
-    SemaphoreManager::close_semaphore(receiver_mutex, SEM_RECEIVER_MUTEX, "Receiver " + name);
     logger.log(Logger::RECEIVER, "Receiver " + name + " cleaned up.");
 }
 

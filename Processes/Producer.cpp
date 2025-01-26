@@ -13,14 +13,10 @@
 
 Producer::Producer(const int id, const std::string& name, const int value_per_cycle, const int limit, SharedData *shared_data)
     : id(id), name(name), value_per_cycle(value_per_cycle), limit(limit), shared_data(shared_data) {
-
-    sem_name = std::string(SEM_PRODUCER_PREFIX) + std::to_string(id);
-    sem = SemaphoreManager::create_semaphore(sem_name, 1, "Producer " + name);
     logger.log(Logger::PRODUCER, "Producer " + name + " started with limit " + std::to_string(limit));
 }
 
 Producer::~Producer() {
-    SemaphoreManager::close_semaphore(sem, sem_name, "Producer " + name);
     logger.log(Logger::PRODUCER, "Producer " + name + " cleaned up.");
 }
 
