@@ -18,6 +18,8 @@
 #include "./Processes/Producer.h"
 #include "./Processes/Receiver.h"
 
+//Required to use an instance inside an interrupt handler
+//A bit of a hack, but it works
 static Producer *g_producer;
 std::vector<int> create_producers(const std::map<int, std::tuple<std::string, int, int>> &producers, SharedData *shared_data) {
     std::vector<int> producer_pids;
@@ -52,6 +54,8 @@ std::vector<int> create_producers(const std::map<int, std::tuple<std::string, in
     return producer_pids;
 }
 
+//Required to use an instance inside an interrupt handler
+//A bit of a hack, but it works
 static Receiver *g_receiver;
 std::vector<int> create_receivers(const std::map<int, std::tuple<std::string, std::map<int, int>>> &receiver_configs, SharedData *shared_data) {
     std::vector<int> receiver_pids;
