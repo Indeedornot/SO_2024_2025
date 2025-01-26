@@ -14,7 +14,6 @@ public:
 
 private:
     SharedData *shared_data;
-    sem_t *receiver_mutex;
 
     void stop_processes(bool save) const;
     void print_status() const;
