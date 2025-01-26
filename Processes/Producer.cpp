@@ -10,6 +10,7 @@
 #include <fstream>
 #include <signal.h>
 #include <fcntl.h>
+#include <unistd.h>
 
 Producer::Producer(const int id, const std::string& name, const int value_per_cycle, const int limit, SharedData *shared_data)
     : id(id), name(name), value_per_cycle(value_per_cycle), limit(limit), shared_data(shared_data) {

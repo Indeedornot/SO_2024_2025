@@ -3,6 +3,7 @@
 
 #include "../SharedData/SharedData.h"
 #include <semaphore.h>
+#include <vector>
 
 class Director {
 public:
