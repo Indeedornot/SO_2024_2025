@@ -200,6 +200,13 @@ private:
     SharedData *shared_data;
 };
 
+class SleepManager {
+public:
+    static void sleep_ms(const int ms) {
+        usleep(ms * 1000);
+    }
+};
+
 class Producer {
 public:
     Producer(const int id, const std::string& name, const int value_per_cycle, const int limit, SharedData *shared_data)
@@ -236,7 +243,7 @@ public:
         }
 
         while (!shared_data->stop_signal.load()) {
-            usleep(time_dist(gen) * 1000);
+            SleepManager::sleep_ms(time_dist(gen));
 
             SemaphoreManager::lock_semaphore(shared_data->global_mutex, SEM_GLOBAL_MUTEX, "Producer " + name);
 
@@ -290,7 +297,7 @@ public:
 
             if (!enough_values) {
                 SemaphoreManager::unlock_semaphore(shared_data->global_mutex, SEM_GLOBAL_MUTEX, "Receiver " + name);
-                usleep(100000);
+                SleepManager::sleep_ms(100);
                 continue;
             }
 
@@ -300,7 +307,7 @@ public:
             }
 
             SemaphoreManager::unlock_semaphore(shared_data->global_mutex, SEM_GLOBAL_MUTEX, "Receiver " + name);
-            usleep(500000);
+            SleepManager::sleep_ms(500000);
         }
     }
 
