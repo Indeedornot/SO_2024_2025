@@ -49,9 +49,6 @@ void SemaphoreManager::close_semaphore(sem_t *sem, const std::string &name, cons
 // Clear stale semaphores - e.g. if there was a forced stop
 // This is only a precaution and should not be necessary
 void SemaphoreManager::clear_stale_semaphores() {
-    if(sem_unlink(SEM_RECEIVER_MUTEX) == -1) {
-//        logger.perror(Logger::GENERAL, "Failed to unlink AN OLD semaphore: " + std::string(SEM_RECEIVER_MUTEX));
-    }
     if(sem_unlink(SEM_GLOBAL_MUTEX) == -1) {
 //        logger.perror(Logger::GENERAL, "Failed to unlink AN OLD semaphore: " + std::string(SEM_GLOBAL_MUTEX));
     }

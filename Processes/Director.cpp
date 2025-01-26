@@ -10,12 +10,10 @@ Director::Director(SharedData *shared_data, std::vector<int> producer_pids, std:
    producer_pids(producer_pids),
    receiver_pids(receiver_pids)
 {
-    receiver_mutex = SemaphoreManager::create_semaphore(SEM_RECEIVER_MUTEX, 1, "Director");
     logger.log(Logger::DIRECTOR, "Director started.");
 }
 
 Director::~Director() {
-    SemaphoreManager::close_semaphore(receiver_mutex, SEM_RECEIVER_MUTEX, "Director");
     logger.log(Logger::DIRECTOR, "Director cleaned up.");
 }
 
@@ -88,9 +86,7 @@ void Director::stop_receivers() const {
 }
 
 void Director::print_status() const {
-    SemaphoreManager::lock_semaphore(receiver_mutex, SEM_RECEIVER_MUTEX, "Director");
     for (int i = 1; i <= MAX_PRODUCERS; ++i) {
         std::cout << "Producer " << i << " has total value: " << shared_data->get_producer_value(i) << std::endl;
     }
-    SemaphoreManager::unlock_semaphore(receiver_mutex, SEM_RECEIVER_MUTEX, "Director");
 }
