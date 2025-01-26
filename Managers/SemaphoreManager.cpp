@@ -6,7 +6,7 @@
 sem_t *SemaphoreManager::create_semaphore(const std::string &name, const int value, const std::string &owner) {
     sem_t *sem = sem_open(name.c_str(), O_CREAT, 0600, value);
     if (sem == SEM_FAILED) {
-        perror("sem_open");
+        logger.perror(Logger::GENERAL, owner + " failed to create semaphore: " + name);
         exit(EXIT_FAILURE);
     }
     logger.log(Logger::GENERAL, owner + " created semaphore: " + name);
