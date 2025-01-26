@@ -87,13 +87,13 @@ int main() {
 
     // Producer ID -> {Name, Value per cycle, Limit}
     const std::map<int, std::tuple<std::string, int, int>> producers = {
-        {1, {"ProducerA", 5, 20}}, {2, {"ProducerB", 10, 30}}, {3, {"ProducerC", 3, 10}}
+        {1, {"ProducerX", 1, 17}}, {2, {"ProducerY", 2, 33}}, {3, {"ProducerZ", 3, 50}}
     };
 
     // Receiver ID -> {Name, {Producer ID -> Consume amount}}
     const std::map<int, std::tuple<std::string, std::map<int, int>>> receiver_configs = {
-        {1, {"ReceiverX", {{1, 2}, {2, 5}}}},
-        {2, {"ReceiverY", {{2, 3}, {3, 1}}}}
+        {1, {"ReceiverA", {{1, 1}, {2, 2}, {3, 3}}}},
+        {2, {"ReceiverB", {{1, 1}, {2, 2}, {3, 3}}}}
     };
 
     std::vector<int> producer_pids = create_producers(producers, shared_data);
